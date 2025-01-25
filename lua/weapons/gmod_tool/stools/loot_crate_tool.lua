@@ -22,6 +22,30 @@ end
 local activeSpawners = {}
 local spawnerTimers = {}
 
+local function IsValidPropOrItem(name)
+    -- Проверяем, является ли это валидным пропом или предметом
+    return util.IsValidModel(name) or scripted_ents.Get(name) ~= nil
+end
+
+local function SpawnLootItemOrProp(pos, name)
+    if util.IsValidModel(name) then
+        -- Спавним проп
+        local loot = ents.Create("prop_physics")
+        if IsValid(loot) then
+            loot:SetModel(name)
+            loot:SetPos(pos + Vector(math.random(-10, 10), math.random(-10, 10), 10))
+            loot:Spawn()
+        end
+    else
+        -- Спавним предмет
+        local loot = ents.Create(name)
+        if IsValid(loot) then
+            loot:SetPos(pos + Vector(math.random(-10, 10), math.random(-10, 10), 10))
+            loot:Spawn()
+        end
+    end
+end
+
 local function SpawnCrate(spawner)
     if not IsValid(spawner) then
         timer.Remove("LootCrateSpawner_" .. spawner:EntIndex())
@@ -52,11 +76,7 @@ local function SpawnCrate(spawner)
             for i, item in ipairs(self.LootItems) do
                 local chance = tonumber(self.LootChances[i]) or 100
                 if math.random(0, 100) <= chance then
-                    local loot = ents.Create(item)
-                    if IsValid(loot) then
-                        loot:SetPos(self:GetPos() + Vector(math.random(-10, 10), math.random(-10, 10), 10))
-                        loot:Spawn()
-                    end
+                    SpawnLootItemOrProp(self:GetPos(), item)
                 end
             end
             self:Remove()
@@ -159,11 +179,7 @@ function TOOL:LeftClick(trace)
                 for i, item in ipairs(self.LootItems) do
                     local chance = tonumber(self.LootChances[i]) or 100
                     if math.random(0, 100) <= chance then
-                        local loot = ents.Create(item)
-                        if IsValid(loot) then
-                            loot:SetPos(self:GetPos() + Vector(math.random(-10, 10), math.random(-10, 10), 10))
-                            loot:Spawn()
-                        end
+                        SpawnLootItemOrProp(self:GetPos(), item)
                     end
                 end
                 self:Remove()
