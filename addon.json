@@ -1,0 +1,9 @@
+{
+  "title": "Loot Crate Tool",
+  "type": "tool",
+  "tags": ["fun", "gameplay"],
+  "ignore": [],
+  "author": "Makalandia",
+  "description": "Just tool",
+  "version": "1.0.0"
+}
