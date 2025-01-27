@@ -2,6 +2,7 @@ if CLIENT then
     local inventory = {}
     local inventoryOpen = false
     local inventoryFrame = nil
+    local playerDied = false
 
     net.Receive("SyncInventory", function()
         inventory = net.ReadTable()
@@ -10,14 +11,27 @@ if CLIENT then
     net.Receive("AddToInventory", function()
         local itemClass = net.ReadString()
         local itemModel = net.ReadString()
-        local itemWeight = net.ReadFloat()  -- Вес предмета
+        local itemWeight = net.ReadFloat() -- Вес предмета
         table.insert(inventory, {class = itemClass, model = itemModel, weight = itemWeight})
         UpdateInventoryUI()
+    end)
+
+    net.Receive("ClearInventory", function()
+        inventory = {}
+        playerDied = true
     end)
 
     local function OpenInventory()
         if inventoryOpen then return end
         inventoryOpen = true
+
+        if playerDied then
+            inventory = {}
+            playerDied = false
+            net.Start("SyncInventory")
+            net.WriteTable(inventory)
+            net.SendToServer()
+        end
 
         net.Start("RequestInventory")
         net.SendToServer()

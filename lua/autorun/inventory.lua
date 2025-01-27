@@ -1,27 +1,22 @@
 if CLIENT then
     local inventory = {}
     local inventoryOpen = false
+    local playerDied = false
 
     net.Receive("AddToInventory", function()
         local itemClass = net.ReadString()
         local itemModel = net.ReadString()
-        local itemWeight = net.ReadFloat()  -- Вес предмета
+        local itemWeight = net.ReadFloat() -- Вес предмета
         table.insert(inventory, {class = itemClass, model = itemModel, weight = itemWeight})
     end)
 
+    net.Receive("ClearInventory", function()
+        inventory = {}
+        playerDied = true
+    end)
+
     local function RemoveItemFromInventory(index)
-        local function printInventory(msg)
-            print(msg)
-            for i, v in ipairs(inventory) do
-                print(i, v.class, v.model, v.weight)
-            end
-        end
-
-        printInventory("Before shift:")
-
         table.remove(inventory, index)
-
-        printInventory("After shift:")
     end
 
     local function UpdateInventoryUI(grid)
@@ -61,6 +56,14 @@ if CLIENT then
     local function OpenInventory()
         if inventoryOpen then return end
         inventoryOpen = true
+
+        if playerDied then
+            inventory = {}
+            playerDied = false
+            net.Start("SyncInventory")
+            net.WriteTable(inventory)
+            net.SendToServer()
+        end
 
         local frame = vgui.Create("DFrame")
         frame:SetTitle("Инвентарь")

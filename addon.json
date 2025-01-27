@@ -1,9 +1,9 @@
 {
-  "title": "Loot Crate Tool",
+  "title": "InventorySWEP",
   "type": "tool",
   "tags": ["fun", "gameplay"],
   "ignore": [],
   "author": "Makalandia",
-  "description": "Just tool",
+  "description": "Just inventory",
   "version": "1.0.0"
 }

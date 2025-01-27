@@ -3,8 +3,10 @@ if SERVER then
     util.AddNetworkString("SpawnItem")
     util.AddNetworkString("RequestInventory")
     util.AddNetworkString("SyncInventory")
+    util.AddNetworkString("ClearInventory")
 
     local playerInventories = {}
+    local playerDied = {}
 
     -- Функция добавления предмета в инвентарь игрока
     local function AddToInventory(ply, item)
@@ -45,8 +47,7 @@ if SERVER then
     end
 
     -- Функция спауна предмета
-    local function SpawnItem(ply, itemClass, itemModel)
-        local spawnPos = ply:GetPos() + ply:GetForward() * 100 + Vector(0, 0, 50)
+    local function SpawnItem(ply, itemClass, itemModel, spawnPos)
         local spawnedItem
 
         -- Создание объекта в зависимости от класса
@@ -92,13 +93,14 @@ if SERVER then
         -- Удаление предмета из инвентаря
         for i, item in ipairs(playerInventories[ply]) do
             if item and item.class == itemClass and item.model == itemModel then
-                playerInventories[ply][i] = nil
+                table.remove(playerInventories[ply], i)
                 break
             end
         end
 
-        -- Спавн предмета
-        SpawnItem(ply, itemClass, itemModel)
+        -- Спавн предмета перед игроком
+        local spawnPos = ply:GetPos() + ply:GetForward() * 100 + Vector(0, 0, 50)
+        SpawnItem(ply, itemClass, itemModel, spawnPos)
 
         -- Синхронизация инвентаря
         net.Start("SyncInventory")
@@ -150,6 +152,22 @@ if SERVER then
             -- Устанавливаем скорость
             ply:SetWalkSpeed(walkSpeed)
             ply:SetRunSpeed(runSpeed)
+        end
+    end)
+
+    -- Обработка смерти игрока
+    hook.Add("PlayerDeath", "DropItemsOnDeath", function(ply)
+        if playerInventories[ply] then
+            for _, item in ipairs(playerInventories[ply]) do
+                if item then
+                    -- Спавн предмета на месте смерти игрока
+                    local deathPos = ply:GetPos()
+                    SpawnItem(ply, item.class, item.model, deathPos)
+                end
+            end
+            playerInventories[ply] = {}
+            net.Start("ClearInventory")
+            net.Send(ply)
         end
     end)
 end
